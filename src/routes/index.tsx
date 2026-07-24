@@ -47,6 +47,7 @@ import {
   fileToBase64,
   formatDateBR,
   itemTotal,
+  lightenColor,
   loadCompany,
   loadQuotes,
   newItem,
@@ -99,6 +100,21 @@ function QuoteApp() {
     setQuotes(list);
     setQuote(emptyQuote(list));
   }, []);
+
+  // Propaga a cor escolhida na aba Empresa para as variáveis CSS globais
+  // (--brand-navy / --brand-sky / --brand-sky-soft), usadas em todo o app
+  // (cabeçalho, botões, badges) — inclusive dentro de Dialogs (que renderizam
+  // via portal fora da árvore React, por isso setamos no <html>).
+  useEffect(() => {
+    const navy = company.themeColor || "#0A192F";
+    const root = document.documentElement.style;
+    root.setProperty("--brand-navy", navy);
+    root.setProperty("--brand-navy-2", lightenColor(navy, 15));
+    root.setProperty("--brand-sky", lightenColor(navy, 55));
+    root.setProperty("--brand-sky-soft", lightenColor(navy, 65));
+    root.setProperty("--brand-slate", "#64748B");
+    root.setProperty("--brand-surface", "#F8FAFC");
+  }, [company.themeColor]);
 
   const totals = useMemo(() => computeTotals(quote), [quote]);
   const validUntil = addDaysISO(quote.issueDate, quote.validityDays);
@@ -174,11 +190,17 @@ function QuoteApp() {
 
   const handleDownloadPdf = async () => {
     if (!pdfRef.current) return;
-    const html2pdf = (await import("html2pdf.js")).default;
     const fileName = `Orcamento_${quote.number}_${sanitizeFileName(quote.client.name)}.pdf`;
     toast.loading("Gerando PDF...", { id: "pdf" });
     try {
-      await html2pdf()
+      // Import dinâmico: dependendo do bundler, o export default pode não vir
+      // populado corretamente — cobrimos os dois formatos possíveis.
+      const mod = await import("html2pdf.js");
+      const html2pdf = (mod as unknown as { default?: unknown }).default ?? mod;
+      if (typeof html2pdf !== "function") {
+        throw new Error("html2pdf.js não carregou corretamente (export inválido).");
+      }
+      await (html2pdf as () => any)()
         .set({
           margin: 0,
           filename: fileName,
@@ -189,9 +211,8 @@ function QuoteApp() {
         .from(pdfRef.current)
         .save();
       toast.success("PDF baixado!", { id: "pdf" });
-      // auto-save as sent draft on export? keep as-is; user controls status.
     } catch (e) {
-      console.error(e);
+      console.error("Erro ao gerar PDF:", e);
       toast.error("Erro ao gerar PDF", { id: "pdf" });
     }
   };
@@ -378,6 +399,38 @@ function QuoteApp() {
                       />
                     </Field>
                   </div>
+                </div>
+
+                <Separator />
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field label="Cor do orçamento">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="color"
+                        value={company.themeColor}
+                        onChange={(e) =>
+                          setCompany((c) => ({ ...c, themeColor: e.target.value }))
+                        }
+                        className="h-9 w-14 cursor-pointer rounded-md border border-input bg-transparent p-1"
+                        aria-label="Selecionar cor do orçamento"
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        {company.themeColor}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs text-muted-foreground"
+                        onClick={() =>
+                          setCompany((c) => ({ ...c, themeColor: "#0A192F" }))
+                        }
+                      >
+                        Restaurar padrão
+                      </Button>
+                    </div>
+                  </Field>
                 </div>
 
                 <Separator />
