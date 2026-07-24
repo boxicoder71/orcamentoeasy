@@ -12,6 +12,7 @@ export interface Company {
   address: string;
   pix: string;
   bank: string;
+  themeColor: string; // cor principal do orçamento (hex), ex: "#0A192F"
 }
 
 export interface Client {
@@ -60,6 +61,7 @@ export const emptyCompany = (): Company => ({
   address: "",
   pix: "",
   bank: "",
+  themeColor: "#0A192F",
 });
 
 export const emptyClient = (): Client => ({
@@ -128,6 +130,45 @@ export const addDaysISO = (iso: string, days: number): string => {
   const d = new Date(iso + "T00:00:00");
   d.setDate(d.getDate() + (days || 0));
   return d.toISOString().slice(0, 10);
+};
+
+// ── Color helpers ─────────────────────────────────────────────
+// Clareia uma cor hex em `percent` (0-100). Usado para derivar tons
+// de destaque (ex: "sky") a partir da cor principal escolhida pelo usuário.
+export const lightenColor = (hex: string, percent: number): string => {
+  const clean = (hex || "#0A192F").replace("#", "");
+  const normalized =
+    clean.length === 3
+      ? clean
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : clean;
+  const num = parseInt(normalized, 16) || 0x0a192f;
+  const amt = Math.round((percent / 100) * 255);
+  const r = Math.min(255, (num >> 16) + amt);
+  const g = Math.min(255, ((num >> 8) & 0x00ff) + amt);
+  const b = Math.min(255, (num & 0x0000ff) + amt);
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+};
+
+// Escolhe branco ou o próprio navy como cor de texto sobre a cor principal,
+// baseado no brilho aproximado da cor (para manter contraste legível).
+export const contrastTextColor = (hex: string): string => {
+  const clean = (hex || "#0A192F").replace("#", "");
+  const normalized =
+    clean.length === 3
+      ? clean
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : clean;
+  const num = parseInt(normalized, 16) || 0x0a192f;
+  const r = (num >> 16) & 0xff;
+  const g = (num >> 8) & 0xff;
+  const b = num & 0xff;
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  return brightness > 150 ? "#0A192F" : "#FFFFFF";
 };
 
 // ── Calculations ──────────────────────────────────────────────
