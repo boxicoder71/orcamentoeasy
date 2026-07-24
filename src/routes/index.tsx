@@ -193,23 +193,42 @@ function QuoteApp() {
     const fileName = `Orcamento_${quote.number}_${sanitizeFileName(quote.client.name)}.pdf`;
     toast.loading("Gerando PDF...", { id: "pdf" });
     try {
-      // Import dinâmico: dependendo do bundler, o export default pode não vir
-      // populado corretamente — cobrimos os dois formatos possíveis.
-      const mod = await import("html2pdf.js");
-      const html2pdf = (mod as unknown as { default?: unknown }).default ?? mod;
-      if (typeof html2pdf !== "function") {
-        throw new Error("html2pdf.js não carregou corretamente (export inválido).");
+      // html2pdf.js embute uma versão antiga do html2canvas que não entende
+      // cores oklch() (usadas pelo tema Tailwind do app). html2canvas-pro é
+      // um fork atualizado com suporte a oklch/lab/color(), então geramos o
+      // canvas com ele e montamos o PDF manualmente com jsPDF.
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import("html2canvas-pro"),
+        import("jspdf"),
+      ]);
+
+      const canvas = await html2canvas(pdfRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+      });
+
+      const imgData = canvas.toDataURL("image/jpeg", 0.98);
+      const pdf = new jsPDF({ unit: "pt", format: "a4", orientation: "portrait" });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
       }
-      await (html2pdf as () => any)()
-        .set({
-          margin: 0,
-          filename: fileName,
-          image: { type: "jpeg", quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
-          jsPDF: { unit: "pt", format: "a4", orientation: "portrait" },
-        })
-        .from(pdfRef.current)
-        .save();
+
+      pdf.save(fileName);
       toast.success("PDF baixado!", { id: "pdf" });
     } catch (e) {
       console.error("Erro ao gerar PDF:", e);
