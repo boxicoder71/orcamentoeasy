@@ -77,7 +77,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Gerador de orçamentos com PDF profissional, envio por WhatsApp e histórico de propostas.",
+          "Crie orçamentos profissionais de produtos e serviços com geração de PDF, envio por WhatsApp e histórico salvo no navegador.",
       },
     ],
   }),
