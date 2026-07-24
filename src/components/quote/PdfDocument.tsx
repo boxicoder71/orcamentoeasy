@@ -5,6 +5,8 @@ import {
   formatDateBR,
   addDaysISO,
   itemTotal,
+  lightenColor,
+  contrastTextColor,
   type Company,
   type Quote,
 } from "@/lib/quote";
@@ -17,6 +19,9 @@ interface Props {
 /**
  * PDF-ready A4 document. Uses inline styles + explicit colors so html2pdf/html2canvas
  * captures faithful colors (no dependency on Tailwind theme variables).
+ *
+ * The main color ("navy") comes from company.themeColor, chosen by the user in the
+ * Empresa tab. "sky" / "skySoft" are derived automatically as lighter tints of it.
  */
 export const PdfDocument = forwardRef<HTMLDivElement, Props>(function PdfDocument(
   { company, quote },
@@ -24,9 +29,10 @@ export const PdfDocument = forwardRef<HTMLDivElement, Props>(function PdfDocumen
 ) {
   const totals = computeTotals(quote);
   const validUntil = addDaysISO(quote.issueDate, quote.validityDays);
-  const navy = "#0A192F";
-  const sky = "#38BDF8";
-  const skySoft = "#7DD3FC";
+  const navy = company.themeColor || "#0A192F";
+  const navyText = contrastTextColor(navy);
+  const sky = lightenColor(navy, 55);
+  const skySoft = lightenColor(navy, 65);
   const surface = "#F8FAFC";
   const slate = "#64748B";
   const border = "#E2E8F0";
@@ -72,7 +78,7 @@ export const PdfDocument = forwardRef<HTMLDivElement, Props>(function PdfDocumen
                 height: "64px",
                 borderRadius: "12px",
                 background: navy,
-                color: "#fff",
+                color: navyText,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -106,7 +112,7 @@ export const PdfDocument = forwardRef<HTMLDivElement, Props>(function PdfDocumen
       <div
         style={{
           background: navy,
-          color: "#fff",
+          color: navyText,
           padding: "18px 32px",
           display: "flex",
           justifyContent: "space-between",
@@ -194,7 +200,7 @@ export const PdfDocument = forwardRef<HTMLDivElement, Props>(function PdfDocumen
           }}
         >
           <thead>
-            <tr style={{ background: navy, color: "#fff" }}>
+            <tr style={{ background: navy, color: navyText }}>
               <th style={th}>Tipo</th>
               <th style={{ ...th, textAlign: "left" }}>Descrição</th>
               <th style={th}>Qtd</th>
@@ -217,7 +223,7 @@ export const PdfDocument = forwardRef<HTMLDivElement, Props>(function PdfDocumen
                     style={{
                       display: "inline-block",
                       background: it.kind === "servico" ? skySoft : navy,
-                      color: it.kind === "servico" ? navy : "#fff",
+                      color: it.kind === "servico" ? navy : navyText,
                       padding: "2px 8px",
                       borderRadius: "999px",
                       fontSize: "9px",
