@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export type ItemKind = "produto" | "servico";
 export type DiscountMode = "valor" | "percent";
 export type QuoteStatus = "rascunho" | "enviado" | "aprovado" | "recusado";
@@ -204,52 +206,142 @@ export const computeTotals = (q: Quote) => {
   };
 };
 
-// ── LocalStorage ──────────────────────────────────────────────
-const COMPANY_KEY = "nc.quote.company";
-const QUOTES_KEY = "nc.quote.quotes";
+// ── Supabase persistence ──────────────────────────────────────
+async function getUserId(): Promise<string | null> {
+  const { data } = await supabase.auth.getUser();
+  return data.user?.id ?? null;
+}
 
-export const loadCompany = (): Company => {
-  if (typeof window === "undefined") return emptyCompany();
-  try {
-    const raw = localStorage.getItem(COMPANY_KEY);
-    return raw ? { ...emptyCompany(), ...JSON.parse(raw) } : emptyCompany();
-  } catch {
+function rowToCompany(row: Record<string, unknown> | null | undefined): Company {
+  if (!row) return emptyCompany();
+  return {
+    logo: (row.logo as string) ?? "",
+    name: (row.name as string) ?? "",
+    document: (row.document as string) ?? "",
+    phone: (row.phone as string) ?? "",
+    email: (row.email as string) ?? "",
+    website: (row.website as string) ?? "",
+    address: (row.address as string) ?? "",
+    pix: (row.pix as string) ?? "",
+    bank: (row.bank as string) ?? "",
+    themeColor: (row.theme_color as string) ?? "#0A192F",
+  };
+}
+
+function rowToQuote(row: Record<string, unknown>): Quote {
+  return {
+    id: row.id as string,
+    number: (row.number as string) ?? "",
+    issueDate: (row.issue_date as string) ?? "",
+    validityDays: (row.validity_days as number) ?? 15,
+    client: { ...emptyClient(), ...((row.client as Client) ?? {}) },
+    items: ((row.items as QuoteItem[]) ?? []),
+    generalDiscount: Number(row.general_discount ?? 0),
+    generalDiscountMode: ((row.general_discount_mode as DiscountMode) ?? "valor"),
+    shipping: Number(row.shipping ?? 0),
+    paymentMethods: (row.payment_methods as string) ?? "",
+    deliveryTerm: (row.delivery_term as string) ?? "",
+    notes: (row.notes as string) ?? "",
+    status: ((row.status as QuoteStatus) ?? "rascunho"),
+    updatedAt: row.updated_at
+      ? new Date(row.updated_at as string).getTime()
+      : Date.now(),
+  };
+}
+
+export const loadCompany = async (): Promise<Company> => {
+  const uid = await getUserId();
+  if (!uid) return emptyCompany();
+  const { data, error } = await supabase
+    .from("companies")
+    .select("*")
+    .eq("user_id", uid)
+    .maybeSingle();
+  if (error) {
+    console.error("[quote] loadCompany", error);
     return emptyCompany();
   }
+  return rowToCompany(data);
 };
 
-export const saveCompany = (c: Company) => {
-  localStorage.setItem(COMPANY_KEY, JSON.stringify(c));
+export const saveCompany = async (c: Company): Promise<void> => {
+  const uid = await getUserId();
+  if (!uid) throw new Error("Usuário não autenticado");
+  const payload = {
+    user_id: uid,
+    logo: c.logo ?? "",
+    name: c.name ?? "",
+    document: c.document ?? "",
+    phone: c.phone ?? "",
+    email: c.email ?? "",
+    website: c.website ?? "",
+    address: c.address ?? "",
+    pix: c.pix ?? "",
+    bank: c.bank ?? "",
+    theme_color: c.themeColor ?? "#0A192F",
+    updated_at: new Date().toISOString(),
+  };
+  const { error } = await supabase
+    .from("companies")
+    .upsert(payload, { onConflict: "user_id" });
+  if (error) throw error;
 };
 
-export const loadQuotes = (): Quote[] => {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(QUOTES_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
+export const loadQuotes = async (): Promise<Quote[]> => {
+  const uid = await getUserId();
+  if (!uid) return [];
+  const { data, error } = await supabase
+    .from("quotes")
+    .select("*")
+    .eq("user_id", uid)
+    .order("updated_at", { ascending: false });
+  if (error) {
+    console.error("[quote] loadQuotes", error);
     return [];
   }
+  return (data ?? []).map(rowToQuote);
 };
 
-export const saveQuotes = (list: Quote[]) => {
-  localStorage.setItem(QUOTES_KEY, JSON.stringify(list));
+function quoteToRow(q: Quote, uid: string) {
+  return {
+    id: q.id,
+    user_id: uid,
+    number: q.number,
+    issue_date: q.issueDate,
+    validity_days: q.validityDays,
+    client: q.client as unknown as Record<string, unknown>,
+    items: q.items as unknown as Record<string, unknown>[],
+    general_discount: q.generalDiscount,
+    general_discount_mode: q.generalDiscountMode,
+    shipping: q.shipping,
+    payment_methods: q.paymentMethods,
+    delivery_term: q.deliveryTerm,
+    notes: q.notes,
+    status: q.status,
+    updated_at: new Date().toISOString(),
+  };
+}
+
+export const upsertQuote = async (q: Quote): Promise<Quote[]> => {
+  const uid = await getUserId();
+  if (!uid) throw new Error("Usuário não autenticado");
+  const { error } = await supabase
+    .from("quotes")
+    .upsert(quoteToRow(q, uid), { onConflict: "id" });
+  if (error) throw error;
+  return loadQuotes();
 };
 
-export const upsertQuote = (q: Quote): Quote[] => {
-  const list = loadQuotes();
-  const idx = list.findIndex((x) => x.id === q.id);
-  const updated = { ...q, updatedAt: Date.now() };
-  if (idx >= 0) list[idx] = updated;
-  else list.unshift(updated);
-  saveQuotes(list);
-  return list;
-};
-
-export const deleteQuote = (id: string): Quote[] => {
-  const list = loadQuotes().filter((q) => q.id !== id);
-  saveQuotes(list);
-  return list;
+export const deleteQuote = async (id: string): Promise<Quote[]> => {
+  const uid = await getUserId();
+  if (!uid) throw new Error("Usuário não autenticado");
+  const { error } = await supabase
+    .from("quotes")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", uid);
+  if (error) throw error;
+  return loadQuotes();
 };
 
 export const statusLabel: Record<QuoteStatus, string> = {
