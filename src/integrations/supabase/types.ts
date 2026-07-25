@@ -14,7 +14,141 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      clients: {
+        Row: {
+          address: string | null
+          created_at: string
+          document: string | null
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          document?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          document?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      companies: {
+        Row: {
+          address: string | null
+          bank: string | null
+          document: string | null
+          email: string | null
+          logo: string | null
+          name: string | null
+          phone: string | null
+          pix: string | null
+          theme_color: string | null
+          updated_at: string
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          bank?: string | null
+          document?: string | null
+          email?: string | null
+          logo?: string | null
+          name?: string | null
+          phone?: string | null
+          pix?: string | null
+          theme_color?: string | null
+          updated_at?: string
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          bank?: string | null
+          document?: string | null
+          email?: string | null
+          logo?: string | null
+          name?: string | null
+          phone?: string | null
+          pix?: string | null
+          theme_color?: string | null
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
+      quotes: {
+        Row: {
+          client: Json
+          delivery_term: string | null
+          general_discount: number
+          general_discount_mode: string
+          id: string
+          issue_date: string
+          items: Json
+          notes: string | null
+          number: string
+          payment_methods: string | null
+          shipping: number
+          status: string
+          updated_at: string
+          user_id: string
+          validity_days: number
+        }
+        Insert: {
+          client?: Json
+          delivery_term?: string | null
+          general_discount?: number
+          general_discount_mode?: string
+          id?: string
+          issue_date: string
+          items?: Json
+          notes?: string | null
+          number: string
+          payment_methods?: string | null
+          shipping?: number
+          status?: string
+          updated_at?: string
+          user_id: string
+          validity_days?: number
+        }
+        Update: {
+          client?: Json
+          delivery_term?: string | null
+          general_discount?: number
+          general_discount_mode?: string
+          id?: string
+          issue_date?: string
+          items?: Json
+          notes?: string | null
+          number?: string
+          payment_methods?: string | null
+          shipping?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+          validity_days?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
