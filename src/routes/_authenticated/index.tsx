@@ -64,7 +64,7 @@ import {
 } from "@/lib/quote";
 import { PdfDocument } from "@/components/quote/PdfDocument";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   component: QuoteApp,
   head: () => ({
     meta: [
