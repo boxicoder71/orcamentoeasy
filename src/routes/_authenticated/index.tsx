@@ -94,14 +94,28 @@ function QuoteApp() {
   const [tab, setTab] = useState("empresa");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const pdfRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const c = loadCompany();
-    const list = loadQuotes();
-    setCompany(c);
-    setQuotes(list);
-    setQuote(emptyQuote(list));
+    let cancelled = false;
+    (async () => {
+      try {
+        const [c, list] = await Promise.all([loadCompany(), loadQuotes()]);
+        if (cancelled) return;
+        setCompany(c);
+        setQuotes(list);
+        setQuote(emptyQuote(list));
+      } catch (err) {
+        console.error(err);
+        toast.error("Erro ao carregar seus dados");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Título da aba do navegador dinâmico: usa o nome da empresa cadastrada
@@ -163,21 +177,31 @@ function QuoteApp() {
     setCompany((c) => ({ ...c, logo: b64 }));
   };
 
-  const handleSaveCompany = () => {
-    saveCompany(company);
-    toast.success("Dados da empresa salvos!");
+  const handleSaveCompany = async () => {
+    try {
+      await saveCompany(company);
+      toast.success("Dados da empresa salvos!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao salvar empresa");
+    }
   };
 
-  const handleSaveDraft = (status: QuoteStatus = "rascunho") => {
+  const handleSaveDraft = async (status: QuoteStatus = "rascunho") => {
     const updated = { ...quote, status };
-    const list = upsertQuote(updated);
-    setQuotes(list);
-    setQuote(updated);
-    toast.success(
-      status === "rascunho"
-        ? "Rascunho salvo!"
-        : `Orçamento marcado como ${statusLabel[status]}`,
-    );
+    try {
+      const list = await upsertQuote(updated);
+      setQuotes(list);
+      setQuote(updated);
+      toast.success(
+        status === "rascunho"
+          ? "Rascunho salvo!"
+          : `Orçamento marcado como ${statusLabel[status]}`,
+      );
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao salvar orçamento");
+    }
   };
 
   const handleNewQuote = () => {
@@ -192,10 +216,15 @@ function QuoteApp() {
     setTab("cliente");
   };
 
-  const handleDeleteQuote = (id: string) => {
-    const list = deleteQuote(id);
-    setQuotes(list);
-    toast.success("Orçamento removido");
+  const handleDeleteQuote = async (id: string) => {
+    try {
+      const list = await deleteQuote(id);
+      setQuotes(list);
+      toast.success("Orçamento removido");
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao remover orçamento");
+    }
   };
 
   const handleDownloadPdf = async () => {
