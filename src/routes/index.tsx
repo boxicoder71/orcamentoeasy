@@ -101,6 +101,13 @@ function QuoteApp() {
     setQuote(emptyQuote(list));
   }, []);
 
+  // Título da aba do navegador dinâmico: usa o nome da empresa cadastrada
+  // pelo próprio usuário, em vez de um nome fixo no código. Cai para
+  // "Orçamentos" genérico enquanto a empresa não tiver nome definido.
+  useEffect(() => {
+    document.title = company.name ? `Orçamentos • ${company.name}` : "Orçamentos";
+  }, [company.name]);
+
   // Propaga a cor escolhida na aba Empresa para as variáveis CSS globais
   // (--brand-navy / --brand-sky / --brand-sky-soft), usadas em todo o app
   // (cabeçalho, botões, badges) — inclusive dentro de Dialogs (que renderizam
@@ -258,7 +265,7 @@ function QuoteApp() {
                 Orçamentos
               </div>
               <div className="truncate text-[11px] text-[color:var(--brand-sky-soft)]">
-                Nuvem Comunicação
+                {company.name || "Configure sua empresa na aba Empresa"}
               </div>
             </div>
           </div>
