@@ -87,6 +87,7 @@ export const Route = createFileRoute("/_authenticated/")({
 });
 
 function QuoteApp() {
+  const navigate = useNavigate();
   const [company, setCompany] = useState<Company>(emptyCompany());
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [quote, setQuote] = useState<Quote>(() => emptyQuote());
@@ -288,6 +289,18 @@ function QuoteApp() {
             >
               <Plus className="mr-1.5 h-4 w-4" />
               <span className="hidden sm:inline">Novo</span>
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={async () => {
+                await supabase.auth.signOut();
+                navigate({ to: "/auth", replace: true });
+              }}
+              className="bg-white/10 text-white hover:bg-white/20"
+            >
+              <LogOut className="mr-1.5 h-4 w-4" />
+              <span className="hidden sm:inline">Sair</span>
             </Button>
           </div>
         </div>
