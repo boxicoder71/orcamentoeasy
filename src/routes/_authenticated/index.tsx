@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   FileText,
@@ -15,6 +15,7 @@ import {
   Eye,
   History,
   ArrowLeft,
+  LogOut,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -63,8 +64,9 @@ import {
   type QuoteStatus,
 } from "@/lib/quote";
 import { PdfDocument } from "@/components/quote/PdfDocument";
+import { supabase } from "@/integrations/supabase/client";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   component: QuoteApp,
   head: () => ({
     meta: [
@@ -85,6 +87,7 @@ export const Route = createFileRoute("/")({
 });
 
 function QuoteApp() {
+  const navigate = useNavigate();
   const [company, setCompany] = useState<Company>(emptyCompany());
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [quote, setQuote] = useState<Quote>(() => emptyQuote());
@@ -286,6 +289,18 @@ function QuoteApp() {
             >
               <Plus className="mr-1.5 h-4 w-4" />
               <span className="hidden sm:inline">Novo</span>
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={async () => {
+                await supabase.auth.signOut();
+                navigate({ to: "/auth", replace: true });
+              }}
+              className="bg-white/10 text-white hover:bg-white/20"
+            >
+              <LogOut className="mr-1.5 h-4 w-4" />
+              <span className="hidden sm:inline">Sair</span>
             </Button>
           </div>
         </div>
