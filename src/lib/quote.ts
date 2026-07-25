@@ -276,7 +276,7 @@ export const buildWhatsappMessage = (
   total: number,
 ): string => {
   const lines = [
-    `*Orçamento #${q.number}* — ${company.name || "Nuvem Comunicação"}`,
+    `*Orçamento #${q.number}* — ${company.name || "Minha Empresa"}`,
     `Cliente: ${q.client.name || "-"}`,
     `Emissão: ${formatDateBR(q.issueDate)} • Validade: ${q.validityDays} dias`,
     ``,
@@ -302,3 +302,4 @@ export const whatsappUrl = (phone: string, message: string) => {
   const withCountry = digits.length && !digits.startsWith("55") ? `55${digits}` : digits;
   return `https://wa.me/${withCountry}?text=${encodeURIComponent(message)}`;
 };
+
