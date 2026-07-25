@@ -16,6 +16,7 @@ import {
   History,
   ArrowLeft,
   LogOut,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -284,6 +285,15 @@ function QuoteApp() {
   return (
     <div className="min-h-screen bg-[color:var(--brand-surface)] text-foreground">
       <Toaster position="top-right" richColors />
+
+      {loading && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 backdrop-blur-sm">
+          <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-muted-foreground shadow-sm">
+            <Loader2 className="h-4 w-4 animate-spin text-[color:var(--brand-navy)]" />
+            Carregando seus dados...
+          </div>
+        </div>
+      )}
 
       {/* Top bar */}
       <header className="sticky top-0 z-30 border-b border-border bg-[color:var(--brand-navy)] text-white">
