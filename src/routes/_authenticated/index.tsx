@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   FileText,
@@ -15,6 +15,7 @@ import {
   Eye,
   History,
   ArrowLeft,
+  LogOut,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -63,6 +64,7 @@ import {
   type QuoteStatus,
 } from "@/lib/quote";
 import { PdfDocument } from "@/components/quote/PdfDocument";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/")({
   component: QuoteApp,
