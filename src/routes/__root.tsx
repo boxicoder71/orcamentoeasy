@@ -72,19 +72,24 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
+// Meta padrão, genérica e "white-label": não menciona nenhuma empresa
+// específica, para que o app possa ser usado por qualquer negócio que o
+// adquirir. O nome real da empresa (definido na aba Empresa) é aplicado
+// dinamicamente no título da aba pelo componente da rota "/", via
+// document.title, já que esse valor só existe no navegador do usuário
+// (localStorage), não no momento em que essa meta estática é gerada.
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Orçamentos • Nuvem Comunicação" },
+      { title: "Orçamentos" },
       {
         name: "description",
         content:
           "Crie orçamentos profissionais de produtos e serviços com geração de PDF, envio por WhatsApp e histórico salvo no navegador.",
       },
-      { name: "author", content: "Nuvem Comunicação" },
-      { property: "og:title", content: "Orçamentos • Nuvem Comunicação" },
+      { property: "og:title", content: "Orçamentos" },
       {
         property: "og:description",
         content:
@@ -92,10 +97,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "Orçamentos • Nuvem Comunicação" },
-      { name: "twitter:description", content: "Crie orçamentos profissionais de produtos e serviços com geração de PDF, envio por WhatsApp e histórico salvo no navegador." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/56913dd2-4c21-452b-a88c-2fbecf81b459/id-preview-2e712231--f3527b3e-9fd2-4c36-9a54-57138782acf7.lovable.app-1784905654669.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/56913dd2-4c21-452b-a88c-2fbecf81b459/id-preview-2e712231--f3527b3e-9fd2-4c36-9a54-57138782acf7.lovable.app-1784905654669.png" },
+      { name: "twitter:title", content: "Orçamentos" },
+      {
+        name: "twitter:description",
+        content:
+          "Crie orçamentos profissionais de produtos e serviços com geração de PDF, envio por WhatsApp e histórico salvo no navegador.",
+      },
     ],
     links: [
       {
@@ -135,3 +142,4 @@ function RootComponent() {
     </QueryClientProvider>
   );
 }
+
